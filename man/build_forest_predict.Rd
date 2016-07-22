@@ -11,14 +11,15 @@ build_forest_predict(trainX, trainY, n_tree, m_feature, min_leaf, testX)
 
 \item{trainY}{Output Response matrix of M x T, M is the number of training samples and T is the number of ouput features}
 
-\item{n_tree}{Number of trees in the forest}
+\item{n_tree}{Number of trees in the forest, which must be positive integer}
 
-\item{m_feature}{Number of randomly selected features considered for a split in each regression tree node.}
+\item{m_feature}{Number of randomly selected features considered for a split in each regression tree node, which must be positive integer and less than N (number of input features)}
 
 \item{min_leaf}{Minimum number of samples in the leaf node. If a node has less than or equal to min_leaf samples,
-then there will be no splitting in that node and this node will be considered as a leaf node.}
+then there will be no splitting in that node and this node will be considered as a leaf node. Valid input is positive integer, which is less than or
+equal to M (number of training samples)}
 
-\item{testX}{Testing samples of size Q x N, Q is the number of testing samples and N is the number of features 
+\item{testX}{Testing samples of size Q x N, where Q is the number of testing samples and N is the number of features 
 (Same number of features as training samples)}
 }
 \value{
@@ -38,21 +39,22 @@ individual regression trees. Larger m_feature can improve the predictive capabil
 increase the correlation between trees and void any gains from averaging multiple predictions. The bootstrap
 resampling of the data for training each tree also increases the variation between the trees.
 
-In a node with training predictor features(X) and output feature vectors(Y), node splitting is done
-with the aim to select a feature from a random set of m_feature and a threshold z to partition the node 
+In a node with training predictor features (X) and output feature vectors (Y), node splitting is done
+with the aim of selecting a feature from a random set of m_feature and threshold z to partition the node 
 into two child nodes, left node (with samples < z) and right node (with samples >=z). In multivariate trees (MRF) 
 node cost is measured as the sum of squares of the Mahalanobis 
-distance where in univariate trees (RF) node cost is measured as the Euclidean distance.
+distance where as in univariate trees (RF) node cost is measured as the Euclidean distance.
 
 After the Model of the forest is built using training Input features (trainX) and output feature matrix (trainY),
 the Model is used to generate the prediction of output features (testY) for the testing samples (testX).
 }
 \examples{
+library(IntegratedMRF)
 #Input and Output Feature Matrix of random data (created using runif)
 trainX=matrix(runif(50*100),50,100) 
 trainY=matrix(runif(50*5),50,5) 
-n_tree=5
-m_feature=10
+n_tree=2
+m_feature=5
 min_leaf=5
 testX=matrix(runif(10*100),10,100) 
 #Prediction size is 10 x 5, where 10 is the number 
@@ -61,6 +63,7 @@ Prediction=build_forest_predict(trainX, trainY, n_tree, m_feature, min_leaf, tes
 }
 \references{
 [Random Forest] Breiman, Leo. "Random forests." Machine learning 45.1 (2001): 5-32.
+
 [Multivariate Random Forest] Segal, Mark, and Yuanyuan Xiao. "Multivariate random forests." 
 Wiley Interdisciplinary Reviews: Data Mining and Knowledge Discovery 1.1 (2011): 80-87.
 }

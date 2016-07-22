@@ -9,7 +9,7 @@ single_tree_prediction(Single_Model, X_test, Variable_number)
 \arguments{
 \item{Single_Model}{Random Forest or Multivariate Random Forest Model of a particular tree}
 
-\item{X_test}{Testing samples of size Q x N, Q is the number of testing samples and N is the number of features(same order and
+\item{X_test}{Testing samples of size Q x N, Q is the number of testing samples and N is the number of features (same order and
 size used as training)}
 
 \item{Variable_number}{Number of Output Features}

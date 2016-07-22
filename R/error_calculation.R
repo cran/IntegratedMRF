@@ -12,11 +12,11 @@
 #' \item{error_corr}{Pearson Correlation Coefficient between Integrated Prediction and Original Output Responses}
 #' @details 
 #' If final_pred is a vector, it refers to the prediction result for one subtype of dataset and this function will return 
-#' Mean Absolute Error, Mean Square Error and Pearson Correlation Coefficient between between predicted and Original Output response. 
+#' Mean Absolute Error, Mean Square Error and Pearson Correlation Coefficient between predicted and Original Output responses. 
 #' If final_pred is a matrix containing prediction results for more than one subtype of dataset, Least Square 
-#' Regression will be using to calculate the weights to combine the predictions and generate an integrated prediction of size n x 1. 
+#' Regression will be using to calculate the weights for combining the predictions and generate an integrated prediction of size n x 1. 
 #' Subsequently, Mean Absolute Error, Mean Square Error and Pearson Correlation Coefficient between 
-#' Integrated Prediction and Original Output response are calculated.
+#' Integrated Prediction and Original Output responses are calculated.
 #' @seealso \code{lsei}
 #' @export
 error_calculation <- function(final_pred,final_actual){

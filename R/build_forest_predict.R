@@ -5,11 +5,12 @@
 #'  
 #' @param trainX Input Feature matrix of M x N, M is the number of training samples and N is the number of input features 
 #' @param trainY Output Response matrix of M x T, M is the number of training samples and T is the number of ouput features
-#' @param n_tree Number of trees in the forest
-#' @param m_feature Number of randomly selected features considered for a split in each regression tree node.
+#' @param n_tree Number of trees in the forest, which must be positive integer
+#' @param m_feature Number of randomly selected features considered for a split in each regression tree node, which must be positive integer and less than N (number of input features)
 #' @param min_leaf Minimum number of samples in the leaf node. If a node has less than or equal to min_leaf samples,
-#'  then there will be no splitting in that node and this node will be considered as a leaf node. 
-#' @param testX Testing samples of size Q x N, Q is the number of testing samples and N is the number of features 
+#'  then there will be no splitting in that node and this node will be considered as a leaf node. Valid input is positive integer, which is less than or
+#'  equal to M (number of training samples) 
+#' @param testX Testing samples of size Q x N, where Q is the number of testing samples and N is the number of features 
 #' (Same number of features as training samples)
 #' @return Prediction result of the Testing samples 
 #' @details
@@ -22,32 +23,40 @@
 #' increase the correlation between trees and void any gains from averaging multiple predictions. The bootstrap
 #' resampling of the data for training each tree also increases the variation between the trees.
 #' 
-#' In a node with training predictor features(X) and output feature vectors(Y), node splitting is done
-#' with the aim to select a feature from a random set of m_feature and a threshold z to partition the node 
+#' In a node with training predictor features (X) and output feature vectors (Y), node splitting is done
+#' with the aim of selecting a feature from a random set of m_feature and threshold z to partition the node 
 #' into two child nodes, left node (with samples < z) and right node (with samples >=z). In multivariate trees (MRF) 
 #' node cost is measured as the sum of squares of the Mahalanobis 
-#' distance where in univariate trees (RF) node cost is measured as the Euclidean distance.
+#' distance where as in univariate trees (RF) node cost is measured as the Euclidean distance.
 #' 
 #' After the Model of the forest is built using training Input features (trainX) and output feature matrix (trainY),
 #' the Model is used to generate the prediction of output features (testY) for the testing samples (testX).
 #' @examples
+#' library(IntegratedMRF)
 #' #Input and Output Feature Matrix of random data (created using runif)
 #' trainX=matrix(runif(50*100),50,100) 
 #' trainY=matrix(runif(50*5),50,5) 
-#' n_tree=5
-#' m_feature=10
+#' n_tree=2
+#' m_feature=5
 #' min_leaf=5
 #' testX=matrix(runif(10*100),10,100) 
 #' #Prediction size is 10 x 5, where 10 is the number 
 #' #of testing samples and 5 is the number of output features
 #' Prediction=build_forest_predict(trainX, trainY, n_tree, m_feature, min_leaf, testX)
+#' 
+#' @importFrom stats cov
 #' @references 
 #' [Random Forest] Breiman, Leo. "Random forests." Machine learning 45.1 (2001): 5-32.
+#' 
 #' [Multivariate Random Forest] Segal, Mark, and Yuanyuan Xiao. "Multivariate random forests." 
 #' Wiley Interdisciplinary Reviews: Data Mining and Knowledge Discovery 1.1 (2011): 80-87.
 #' @export
 #' 
 build_forest_predict <- function(trainX, trainY, n_tree, m_feature, min_leaf, testX){
+  if (class(n_tree)=="character" || n_tree%%1!=0 || n_tree<1) stop('Number of trees in the forest can not be fractional or negative integer or string')
+  if (class(m_feature)=="character" || m_feature%%1!=0 || m_feature<1) stop('Number of randomly selected features considered for a split can not be fractional or negative integer or string')
+  if (class(min_leaf)=="character" || min_leaf%%1!=0 || min_leaf<1 || min_leaf>nrow(trainX)) stop('Minimum leaf number can not be fractional or negative integer or string or greater than number of samples')
+   
   theta <- function(trainX){trainX}
   results <- bootstrap::bootstrap(1:nrow(trainX),n_tree,theta) 
   b=results$thetastar
@@ -66,8 +75,11 @@ build_forest_predict <- function(trainX, trainY, n_tree, m_feature, min_leaf, te
     Single_Model=NULL
     X=trainX[ b[ ,i],  ]
     Y=matrix(trainY[ b[ ,i],  ],ncol=Variable_number)
-    V_inv = (stats::cov(Y)) # calculate the V inverse
-    Single_Model=build_single_tree(X, Y, m_feature, min_leaf,V_inv,Command)
+    Inv_Cov_Y = solve(cov(Y)) # calculate the V inverse
+    if (Command==1){
+      Inv_Cov_Y=matrix(rep(0,4),ncol=2)
+    }
+    Single_Model=build_single_tree(X, Y, m_feature, min_leaf,Inv_Cov_Y,Command)
     Y_pred=single_tree_prediction(Single_Model,testX,Variable_number)
     for (j in 1:Variable_number){
       Y_HAT[,j]=Y_HAT[,j]+Y_pred[,j]

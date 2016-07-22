@@ -15,12 +15,9 @@
 #' For the example of 3 data subtypes, it will be a list containing 3 arrays where each array contains the sample information for each data subtype.
 #' @param finalY_train_cell Cell lines of output features for training samples
 #' @param finalY_test_cell Cell lines of output features for testing samples
-#' @param n_tree number of trees in the forest
-#' @param m_feature Number of randomly selected features considered for a split in each regression tree node.
-#' @param min_leaf minimum number of samples in the leaf node 
-#' @param Serial Consists of a  list of all combinations of different subtypes of a dataset (except for the case with no dataset being selected). 
-#' For example, if a 
-#' dataset has 3 subtypes, then Serial is a list of size 2^3-1=7.  The ordering of the seven sets will be [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3]
+#' @param n_tree number of trees in the forest, which must be positive integer
+#' @param m_feature Number of randomly selected features considered for a split in each regression tree node, which must be positive integer
+#' @param min_leaf minimum number of samples in the leaf node, which must be positive integer and less than or equal to M (number of training samples)  
 #' 
 #' @return Final Prediction of testing samples based on provided testing sample names.
 #' @details
@@ -30,55 +27,44 @@
 #' 
 #' Combination Weight Generation: For M x N dataset, N number of bootstrap sampling sets are considered. For each bootstrap sampling set and each subtype, a Random Forest (RF) 
 #' or, Multivariate Random Forest (MRF) model is generated, which is used for calculating the prediction performance for out-of-bag samples.  
-#' The prediction performance for each subtype of the dataset is based on the averaging over different bootstrap training sets. 
+#' The prediction performance for each dataset subtypes is based on the averaging over different bootstrap training sets. 
 #' The combination weights (regression coefficients) for each combination of subtypes are generated using least Square Regression from the 
-#' individual subtype predictions and used integrate the predictions from data subtypes.
+#' individual subtype predictions and used to integrate the predictions from data subtypes.
 #'  
 #' The specific set of combination weights to be used for testing samples will depend on the number of data subtypes available 
 #' for the testing samples. Note that not all subtype information maybe available for all samples. 
-#' As an example with three data subtypes, a testing sample with all subtype data available will using 
-#' the combination weights corresponding to Serial [1 2 3] where if subtype 3 is not available, the function will 
-#' using the combination weights corresponding to Serial [1 2].
+#' As an example with three data subtypes, a testing sample with all subtype data available will use 
+#' the combination weights corresponding to Serial [1 2 3] where as if subtype 3 is not available, the function will 
+#' use the combination weights corresponding to Serial [1 2].
 #' @examples
-#' #library(IntegratedPredictionUsingRandomForest)
-#' #n_tree=10
-#' #m_feature=5
-#' #min_leaf=3
-#' #Cell=NULL
-#' #Expression=NULL
-#' #finalX=NULL
-#' #library(openxlsx)
-#' #for (i in 1:5){#5=number_of_subtypes_in_dataset
-#' #     Genome=read.xlsx("Subtype_filename.xlsx")
-#' #     Expression[[i]]=Genome[complete.cases(Genome),]#remove all feature vector with NaN
-#' #     Cell[[i]]=colnames(Expression[[i]], do.NULL = TRUE, prefix = "col")[-1]
-#' #     # Taking the cell line names for that subtype of dataset
-#' #     finalX[[i]]=matrix(as.numeric(t(Expression[[i]])[-1,]),nrow=length(Cell[[i]]))
-#' #     #Input Matrix(MxN), with M number of samples and N number of features
-#' #}
-#' #Drug_Sen_train <- read.xlsx("Output_Response_FileName.xlsx", colNames = TRUE)
-#' #for (j in 1:3){#3=Number_of_output_Response
-#' #     XX=matrix(Drug_Sen_train[,Column_of_the_Response_for_Prediction],ncol=1)
-#' #     finalY_train[,j]=matrix(Imputation(XX),ncol=1)
-#' #}
-#' #finalY_train_cell=Drug_Sen_train[,1]
-#' #Serial=NULL
-#' #library(caTools)
-#' #for (p in length(Cell):1){
-#' #       nk=combs(1:5,p)
-#' #       sk=length(Serial)
-#' #       for (q in 1:dim(nk)[1]){
-#' #               Serial[[sk+q]]=nk[q, ]
-#' #       }
-#' #}
-#' #Drug_Sen_test <- read.xlsx("Output_Response_Test.xlsx", sheet = 1,  startRow = 1, colNames = TRUE)
-#' #finalY_test_cell=Drug_Sen_test[,1]
-#' #Prediction=IntegratedPrediction(finalX,finalY_train,Cell,finalY_train_cell,finalY_test_cell,
-#' #+n_tree,m_feature,min_leaf,Serial)
+#' library(IntegratedMRF)
+#' data(Dream_Dataset)
+#' Tree=1
+#' Feature=1
+#' Leaf=5
+#' finalX=Dream_Dataset[[1]]
+#' Cell=Dream_Dataset[[2]]
+#' Y_train_Dream=Dream_Dataset[[3]]
+#' Y_train_cell=Dream_Dataset[[4]]
+#' Y_test=Dream_Dataset[[5]]
+#' Y_test_cell=Dream_Dataset[[6]]
+#' Drug=c(1,2,3)
+#' Y_train_Drug=matrix(Y_train_Dream[,Drug],ncol=length(Drug))
+#' IntegratedPrediction(finalX,Y_train_Drug,Cell,Y_train_cell,Y_test_cell,Tree,Feature,Leaf)
 #'
+#' @importFrom caTools combs
 #' @export
 
-IntegratedPrediction <- function(finalX,finalY_train,Cell,finalY_train_cell,finalY_test_cell,n_tree,m_feature,min_leaf,Serial){
+IntegratedPrediction <- function(finalX,finalY_train,Cell,finalY_train_cell,finalY_test_cell,n_tree,m_feature,min_leaf){
+  Serial=NULL
+  #   library(caTools)
+  for (p in length(Cell):1){
+    nk=combs(1:length(Cell),p)
+    sk=length(Serial)
+    for (q in 1:dim(nk)[1]){
+      Serial[[sk+q]]=nk[q, ]
+    }
+  }
   ##
   Common_cell_train=finalY_train_cell
   for (q in 1:length(Cell)){
@@ -98,7 +84,11 @@ IntegratedPrediction <- function(finalX,finalY_train,Cell,finalY_train_cell,fina
     Command=2
   }else if(Variable_number==1){
     Command=1
-  } 
+  }
+  if (class(n_tree)=="character" || n_tree%%1!=0 || n_tree<1) stop('Number of trees in the forest can not be fractional or negative integer or string')
+  if (class(m_feature)=="character" || m_feature%%1!=0 || m_feature<1) stop('Number of randomly selected features considered for a split can not be fractional or negative integer or string')
+  if (class(min_leaf)=="character" || min_leaf%%1!=0 || min_leaf<1 || min_leaf>nrow(finalY)) stop('Minimum leaf number can not be fractional or negative integer or string or greater than number of samples')
+  
   ################################## BSP ###############################
   if (nrow(finalY)<50){
     N=floor(0.75*nrow(finalY))

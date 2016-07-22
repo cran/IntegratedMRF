@@ -5,7 +5,7 @@
 \title{Prediction for testing samples using specific combination weights from integrated RF or MRF model}
 \usage{
 CombPredictSpecific(finalX, finalY_train, Cell, finalY_train_cell,
-  finalY_test_cell, n_tree, m_feature, min_leaf, Serial, Coeff)
+  finalY_test_cell, n_tree, m_feature, min_leaf, Coeff)
 }
 \arguments{
 \item{finalX}{List of Matrices where each matrix represent a specific data subtype (such as genomic characterizations for 
@@ -13,7 +13,7 @@ drug sensitivity prediction). Each subtype can have different types of features.
  100, 200 and 250 features respectively,  finalX will be a list containing 3 matrices of sizes M x 100, M x 200 and M x 250 
  where M is the number of Samples.}
 
-\item{finalY_train}{A M x T matrix of output features for training samples, where M is number of samples and T is the number of output features. 
+\item{finalY_train}{A M x T matrix of output features for training samples, where M is the number of samples and T is the number of output features. 
 The dataset is assumed to contain no missing values. If there are missing values, an imputation method should be applied before using the function. 
 A function 'Imputation' is included within the package.}
 
@@ -22,18 +22,14 @@ For the example of 3 data subtypes, it will be a list containing 3 arrays where 
 
 \item{finalY_train_cell}{Sample names of output features for training samples}
 
-\item{finalY_test_cell}{Sample names of output features for testing samples(All these testing samples
+\item{finalY_test_cell}{Sample names of output features for testing samples (All these testing samples
 must have features for each subtypes of dataset)}
 
-\item{n_tree}{Number of trees in the forest}
+\item{n_tree}{Number of trees in the forest, which must be positive integer}
 
-\item{m_feature}{Number of randomly selected features considered for a split in each regression tree node}
+\item{m_feature}{Number of randomly selected features considered for a split in each regression tree node, which must be a positive integer}
 
-\item{min_leaf}{Minimum number of samples in the leaf node}
-
-\item{Serial}{Consists of a  list of all combinations of different subtypes of a dataset (except for the case with no dataset being selected). 
-For example, if a 
-dataset has 3 subtypes, then Serial is a list of size 2^3-1=7.  The ordering of the seven sets will be [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3]}
+\item{min_leaf}{Minimum number of samples in the leaf node, which must be a positive integer less than or equal to M (number of training samples)}
 
 \item{Coeff}{Combination Weights (user defined or some combination weights generated using the 'Combination' function). 
 The size must be C, which is equal to the number of subtypes of dataset given in finalX.}
@@ -57,14 +53,23 @@ should have the subtype data corresponding to the non-zero weight subtypes. For 
 should be present for the required subtypes for the testing samples.
 }
 \examples{
-## This example is the extension of the example given in the "Combination" function.
-##finalX, finalY_train, Cell, finalY_train_cell, n_tree,m_feature, 
-##min_leaf, Serial are the same variable provided for the "Combination" function.
-##The Weight is a vector of size length(Cell)x1, which is user defined.
-#Uncomment the following line to run the code
-#Drug_Sen_test <- read.xlsx("Output_Response_Test.xlsx", sheet = 1,  startRow = 1, colNames = TRUE)
-#finalY_test_cell=Drug_Sen_test[,1]
-#Final_Prediction=CombPredictSpecific(finalX,finalY_train,Cell,
-#+finalY_train_cell,finalY_test_cell,n_tree,m_feature,min_leaf,Serial,runif(length(Cell)*1))
+library(IntegratedMRF)
+data(Dream_Dataset)
+Tree=1
+Feature=1
+Leaf=5
+Confidence=80
+finalX=Dream_Dataset[[1]]
+Cell=Dream_Dataset[[2]]
+Y_train_Dream=Dream_Dataset[[3]]
+Y_train_cell=Dream_Dataset[[4]]
+Y_test=Dream_Dataset[[5]]
+Y_test_cell=Dream_Dataset[[6]]
+Drug=c(1,2,3)
+Y_train_Drug=matrix(Y_train_Dream[,Drug],ncol=length(Drug))
+Result=Combination(finalX,Y_train_Drug,Cell,Y_train_cell,Tree,Feature,Leaf,Confidence)
+
+CombPredictSpecific(finalX,Y_train_Drug,Cell,Y_train_cell,Y_test_cell,Tree,
+        Feature,Leaf,runif(length(Cell)*1))
 }
 

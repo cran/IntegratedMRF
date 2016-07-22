@@ -5,7 +5,7 @@
 \title{Weights for combination of predictions from different data subtypes using Least Square Regression based on various error estimation techniques}
 \usage{
 Combination(finalX, finalY_train, Cell, finalY_train_cell, n_tree, m_feature,
-  min_leaf, Serial, Confidence_Level)
+  min_leaf, Confidence_Level)
 }
 \arguments{
 \item{finalX}{List of Matrices where each matrix represent a specific data subtype (such as genomic characterizations for 
@@ -22,41 +22,37 @@ For the example of 3 data subtypes, it will be a list containing 3 arrays where 
 
 \item{finalY_train_cell}{Sample names of output features for training samples}
 
-\item{n_tree}{Number of trees in the forest}
+\item{n_tree}{Number of trees in the forest, which must be positive integer}
 
-\item{m_feature}{Number of randomly selected features considered for a split in each regression tree node.}
+\item{m_feature}{Number of randomly selected features considered for a split in each regression tree node, Valid Input is a positive integer, which is less than N (which is equal to number of input features for the smallest genomic characterization)}
 
-\item{min_leaf}{Minimum number of samples in the leaf node}
+\item{min_leaf}{Minimum number of samples in the leaf node, which must be positive integer and less than or equal to M (number of training samples)}
 
-\item{Serial}{Consists of a  list of all combinations of different subtypes of a dataset (except for the case with no dataset being selected). 
-For example, if a 
-dataset has 3 subtypes, then Serial is a list of size 2^3-1=7.  The ordering of the seven sets will be [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3]}
-
-\item{Confidence_Level}{Confidence level for calculation of confidence interval (User Defined)}
+\item{Confidence_Level}{Confidence level for calculation of confidence interval (User Defined), which must be between 0 and 100}
 }
 \value{
 List with the following components: 
-\item{BSP_coeff}{Combination weights using Bootstrap Error Model, where index are in list format. 
-If number of genomic characterizations or subtypes of dataset is 5, then there will be 2^5-1=31 list of weights}
-\item{Resub_coeff}{Combination weights using Resubstituition Error Model, where index are in list format. 
-If number of genomic characterizations or subtypes of dataset is 5, then there will be 2^5-1=31 list of weights}
-\item{BSP632_coeff}{Combination weights using 0.632Bootstrap Error Model, where index are in list format. 
-If number of genomic characterizations or subtypes of dataset is 5, then there will be 2^5-1=31 list of weights}
-\item{LOO_coeff}{Combination weights using Leave-One-Out Error Model, where index are in list format. 
-If number of genomic characterizations or subtypes of dataset is 5, then there will be 2^5-1=31 list of weights} 
+\item{BSP_coeff}{Combination weights using Bootstrap Error Estimation Model, where index is in list format. 
+If the number of genomic characterizations or subtypes of dataset is 5, there will be 2^5-1=31 list of weights}
+\item{Nfold_coeff}{Combination weights using N fold cross validation Error Estimation Model, where index is in list format. 
+If the number of genomic characterizations or subtypes of dataset is 5, there will be 2^5-1=31 list of weights}
+\item{BSP632plus_coeff}{Combination weights using 0.632+ Bootstrap Error Estimation Model, where index is in list format. 
+If the number of genomic characterizations or subtypes of dataset is 5, there will be 2^5-1=31 list of weights}
+\item{LOO_coeff}{Combination weights using Leave-One-Out Error Estimation Model, where index is in list format. 
+If the number of genomic characterizations or subtypes of dataset is 5, there will be 2^5-1=31 list of weights} 
 \item{Error}{Matrix of Mean Absolute Error, Mean Square Error and correlation between actual and predicted responses for integrated model based 
-on Bootstrap, Re-substitution, 0.632Bootstrap and Leave-one-out error estimation sampling techniques for the integrated model 
+on Bootstrap, N fold cross validation, 0.632+ Bootstrap and Leave-one-out error estimation sampling techniques for the integrated model 
 containing all the data subtypes}
 \item{Confidence Interval}{Low and High confidence interval for a user defined confidence level for the drug using Jackknife-After-Bootstrap Approach in a list}
 \item{BSP_error_all_mae}{Bootstrap Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
 combinations and R is the number of output responses. C is in decreasing order, which means first value is combination of all subtypes 
 and next ones are in decreasing order. For example, if a dataset has 3 subtypes, then C is equal to 2^3-1=7.  The ordering of C is the combination of
 subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
-\item{Resub_error_all_mae}{Re-substituition Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
+\item{Nfold_error_all_mae}{N fold cross validation Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
 combinations and R is the number of output responses. C is in decreasing order, which means first value is combination of all subtypes 
 and next ones are in decreasing order. For example, if a dataset has 3 subtypes, then C is equal to 2^3-1=7.  The ordering of C is the combination of
 subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
-\item{BSP632_error_all_mae}{0.632Bootstrap Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
+\item{BSP632plus_error_all_mae}{0.632+ Bootstrap Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
 combinations and R is the number of output responses. C is in decreasing order, which means first value is combination of all subtypes 
 and next ones are in decreasing order. For example, if a dataset has 3 subtypes, then C is equal to 2^3-1=7.  The ordering of C is the combination of
 subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
@@ -64,19 +60,17 @@ subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
 combinations and R is the number of output responses. C is in decreasing order, which means first value is combination of all subtypes 
 and next ones are in decreasing order. For example, if a dataset has 3 subtypes, then C is equal to 2^3-1=7.  The ordering of C is the combination of
 subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
-The function also returns figures of different error estimation in .tiff format
+The function also returns figures of different error estimations in .tiff format
 }
 \description{
-Calculates combination weights for different subtypes of dataset combinations to generate integrated Random Forest (RF) or Multivariate 
-Random Forest (MRF) model based on different error estimate options 
-of Bootstrap, Re-substitution, 0.632 Bootstrap or Leave one out.
+Calculates combination weights for different subtypes of dataset combinations to generate integrated Random Forest (RF) or Multivariate Random Forest (MRF) model based on different error estimation models such as Bootstrap, 0.632+ Bootstrap, N-fold cross validation or Leave one out.   
 }
 \details{
 The function takes all the subtypes of dataset in matrix format and its corresponding sample information.
-For the calculation purpose, we have taken the data of the samples that are common in all the subtypes and output training responses.
-For example,  let a dataset has 3 sub-types with different number of samples and features, while indices of samples in subtype 1, 2, 3  and output feature matrix
-is 1:10, 3:15, 5:16 and 5:11 respectively. So, features of sample index 5:10 (common to all subtypes and output feature matrix) of all subtypes and output feature 
-matrix will be separated and considered for all calculations. 
+For calculation purpose, we have considered the data of the samples that are common in all the subtypes and output training responses.
+For example, consider a dataset of 3 sub-types with different number of samples and features, with indices of samples in subtype 1, 2, 3  and output feature matrix
+is 1:10, 3:15, 5:16 and 5:11 respectively. Thus, features of sample index 5:10 (common to all subtypes and output feature matrix) of all subtypes and output feature 
+matrix will be selected and considered for all calculations. 
 
 For M x N dataset, N number of bootstrap sampling sets are considered. For each bootstrap sampling set and each subtype, a Random Forest (RF) 
 or, Multivariate Random Forest (MRF) model is generated, which is used for calculating the prediction performance for out-of-bag samples.  
@@ -85,11 +79,17 @@ The combination weights (regression coefficients) for each combination of subtyp
 individual subtype predictions and used later to calculate mean absolute error, mean square error and correlation coefficient between 
 predicted and actual values.
 
-For re-substitution error estimation with M cell lines, 1 model is generated for each subtype of dataset, which is then used to 
-calculate errors and combination weights for different data subtype combinations.   
+For N-fold cross validation error estimation with M cell lines, N models are generated for each subtype of dataset, where for each partition (M/N)*(N-1) cell
+lines are used for training and the remaining cell lines are used to 
+estimate errors and combination weights for different data subtype combinations.   
 
-For 0.632 Bootstrap error estimation, prediction of bootstrap and re-substitution error estimation is combined using 
-0.632xBootstrap Error + 0.368xRe-substitution Error. 
+In 0.632 Bootstrap error estimation, bootstrap and re-substitution error estimates are combined based on 
+0.632xBootstrap Error + 0.368xRe-substitution Error. While 0.632+ Bootstrap error estimation considers the overfitting of re-substitution error
+with no information error rate \eqn{\gamma}. An estimate of \eqn{\gamma} is obtained by permuting the responses \eqn{y[i]} and predictors \eqn{x[j]}.
+\deqn{\gamma=sum(sum(error(x[j],y[i]),j=1,m),i=1,m)/m^2} 
+The relative overfitting rate is defined as \eqn{R=(Bootstrap Error-Resubstitution Error)/(\gamma-Resubstitution Error)} and weight distribution
+between bootstrap error and Re-substitution Error is defined as \eqn{w=0.632/(1-0.368*R)}. So, 0.632+ Bootstrap error is equal to 
+\eqn{(1-w)*Bootstrap Error+w*Resubstitution Error}.
 These prediction results are then used to compute the errors and combination weights for different data subtype combinations.
 
 Confidence Interval has been calculated using Jackkniffe-After-Bootstrap Approach and prediction result of bootstrap error estimation.
@@ -98,42 +98,26 @@ For leave-one-out error estimation using M cell lines, M models are generated fo
 calculate the errors and combination weights for different data subtype combinations.
 }
 \examples{
-#library(IntegratedPredictionUsingRandomForest)
-#n_tree=10
-#m_feature=5
-#min_leaf=3
-#Cell=NULL
-#Expression=NULL
-#finalX=NULL
-#library(openxlsx)
-#for (i in 1:5){#5=number_of_subtypes_in_dataset
-#     Genome=read.xlsx("Subtype_filename.xlsx")
-#     Expression[[i]]=Genome[complete.cases(Genome),]#remove all feature vector with NaN
-#     Cell[[i]]=colnames(Expression[[i]], do.NULL = TRUE, prefix = "col")[-1]
-#     # Taking the cell line names for that subtype of dataset
-#     finalX[[i]]=matrix(as.numeric(t(Expression[[i]])[-1,]),nrow=length(Cell[[i]]))
-#     #Input Matrix(MxN), with M number of samples and N number of features
-#}
-#Drug_Sen_train <- read.xlsx("Output_Response_FileName.xlsx", colNames = TRUE)
-#for (j in 1:3){#3=Number_of_output_Response
-#     XX=matrix(Drug_Sen_train[,Column_of_the_Response_for_Prediction],ncol=1)
-#     finalY_train[,j]=matrix(Imputation(XX),ncol=1)
-#}
-#finalY_train_cell=Drug_Sen_train[,1]
-#Serial=NULL
-#library(caTools)
-#for (p in length(Cell):1){
-#       nk=combs(1:5,p)
-#       sk=length(Serial)
-#       for (q in 1:dim(nk)[1]){
-#               Serial[[sk+q]]=nk[q, ]
-#       }
-#}
-## Combination Index using Different Error Estimation Method
-#Result=Combination(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feature,min_leaf,Serial)
+library(IntegratedMRF)
+data(Dream_Dataset)
+Tree=1
+Feature=1
+Leaf=5
+Confidence=80
+finalX=Dream_Dataset[[1]]
+Cell=Dream_Dataset[[2]]
+Y_train_Dream=Dream_Dataset[[3]]
+Y_train_cell=Dream_Dataset[[4]]
+Y_test=Dream_Dataset[[5]]
+Y_test_cell=Dream_Dataset[[6]]
+Drug=c(1,2,3)
+Y_train_Drug=matrix(Y_train_Dream[,Drug],ncol=length(Drug))
+Result=Combination(finalX,Y_train_Drug,Cell,Y_train_cell,Tree,Feature,Leaf,Confidence)
+
 }
 \references{
-Wan, Qian, and Ranadip Pal. "An ensemble based top performing approach for 
-NCI-DREAM drug sensitivity prediction challenge." PloS one 9.6 (2014): e101183.
+Wan, Qian, and Ranadip Pal. "An ensemble based top performing approach for NCI-DREAM drug sensitivity prediction challenge." PloS one 9.6 (2014): e101183.
+
+Efron, Bradley, and Robert Tibshirani. "Improvements on cross-validation: the 632+ bootstrap method." Journal of the American Statistical Association 92.438 (1997): 548-560.
 }
 

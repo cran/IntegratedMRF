@@ -4,7 +4,7 @@
 \alias{split_node}
 \title{Splitting Criteria of all the nodes of the tree}
 \usage{
-split_node(X, Y, m_feature, Index, i, model, min_leaf, Cov_Y, Command)
+split_node(X, Y, m_feature, Index, i, Model, min_leaf, Inv_Cov_Y, Command)
 }
 \arguments{
 \item{X}{Input Training matrix of size M x N, M is the number of training samples and N is the number of features}
@@ -18,13 +18,13 @@ split_node(X, Y, m_feature, Index, i, model, min_leaf, Cov_Y, Command)
 \item{i}{Number of split. Used as an index, which indicates where in the list the splitting
 criteria of this split will be stored.}
 
-\item{model}{A list of lists with the spliting criteria of all the node splits. In each iteration,
+\item{Model}{A list of lists with the spliting criteria of all the node splits. In each iteration,
 a new list is included with the spliting criteria of the new split of a node.}
 
 \item{min_leaf}{Minimum number of samples in the leaf node. If a node has less than or, equal to min_leaf samples,
-then there will be no splitting in that node and the node is a leaf node.}
+then there will be no splitting in that node and the node is a leaf node. Valid input is a positive integer and less than or equal to M (number of training samples)}
 
-\item{Cov_Y}{Covariance matrix of Output Response matrix for MRF(Give Zero for RF)}
+\item{Inv_Cov_Y}{Inverse of Covariance matrix of Output Response matrix for MRF (Input [0 0; 0 0] for RF)}
 
 \item{Command}{1 for univariate Regression Tree (corresponding to RF) and 2 for Multivariate Regression Tree (corresponding to MRF)}
 }

@@ -3,7 +3,7 @@
 #' Predicts the output responses of testing samples based on the input regression tree
 #'  
 #' @param Single_Model Random Forest or Multivariate Random Forest Model of a particular tree
-#' @param X_test Testing samples of size Q x N, Q is the number of testing samples and N is the number of features(same order and
+#' @param X_test Testing samples of size Q x N, Q is the number of testing samples and N is the number of features (same order and
 #' size used as training) 
 #' @param Variable_number Number of Output Features 
 #' @return Prediction result of the Testing samples for a particular tree
@@ -19,8 +19,9 @@ single_tree_prediction <- function(Single_Model,X_test,Variable_number){
   
   for (k in 1:nrow(X_test)){
     xt=X_test[k, ]
-    i=1
-    Y_pred[k,]=predicting(Single_Model,i,xt,Variable_number)
+    i=0
+    Result_temp=predicting(Single_Model,i,xt,Variable_number)
+    Y_pred[k,]=unlist(Result_temp)
     
   }
   #Y_pred1=unlist(Y_pred, recursive = TRUE)
