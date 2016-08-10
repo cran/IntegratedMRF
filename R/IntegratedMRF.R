@@ -98,7 +98,7 @@
 #' 
 #' @importFrom grDevices dev.off tiff
 #' @importFrom caTools combs
-#' @importFrom stats cor
+#' @importFrom stats cor lsfit
 #' @references
 #' Wan, Qian, and Ranadip Pal. "An ensemble based top performing approach for NCI-DREAM drug sensitivity prediction challenge." PloS one 9.6 (2014): e101183.
 #' 
@@ -122,9 +122,11 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   }
   
   final=NULL
+  MM_feature=rep(0,length(Cell))
   for (q in 1:length(Cell)){
     Cell_ind=match(Common_cell_train,Cell[[q]])
     final[[q]]=finalX[[q]][Cell_ind, ]
+    MM_feature[q]=ncol(final[[q]])
   }
   finalY=NULL
   ia6=match(Common_cell_train,finalY_train_cell)
@@ -136,7 +138,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
     Command=1
   } 
   if (class(n_tree)=="character" || n_tree%%1!=0 || n_tree<1) stop('Number of trees in the forest can not be fractional or negative integer or string')
-  if (class(m_feature)=="character" || m_feature%%1!=0 || m_feature<1) stop('Number of randomly selected features considered for a split can not be fractional or negative integer or string')
+  if (class(m_feature)=="character" || m_feature%%1!=0 || m_feature<1 || m_feature>min(MM_feature)) stop('Number of randomly selected features considered for a split can not be fractional or negative integer or string or greater than minimum number of features')
   if (class(min_leaf)=="character" || min_leaf%%1!=0 || min_leaf<1 || min_leaf>nrow(finalY)) stop('Minimum leaf number can not be fractional or negative integer or string or greater than number of samples')
   if (class(Confidence_Level)=="character" || Confidence_Level>100 || Confidence_Level<1) stop('Confidence Interval can not be negative integer or string or greater than 100')
   
@@ -211,6 +213,8 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
           final_genome_BSP1=cbind(final_genome_BSP1,matrix(finalY_pred[[W[q]]][,RR],ncol=1))
         }
         BSP_temp_coeff1=matrix(limSolve::lsei(A=final_genome_BSP1, B=matrix(finalY_bsp_pred[,RR],ncol=1), E=rep(1,dim(final_genome_BSP1)[2]), F=1)$X, ncol=1)
+#         BB=stats::lsfit(final_genome_BSP1, matrix(finalY_bsp_pred[,RR],ncol=1), wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#         BSP_temp_coeff1=unname(BB$coefficients)
         BSP_error_alll_mae[[RR]][S,FF]=mean(abs(final_genome_BSP1%*%BSP_temp_coeff1-finalY_bsp_pred[,RR]))
         BSP_error_alll_mse[[RR]][S,FF]=mean((final_genome_BSP1%*%BSP_temp_coeff1-finalY_bsp_pred[,RR])^2)
         BSP_error_alll_corr[[RR]][S,FF]=stats::cor(final_genome_BSP1%*%BSP_temp_coeff1,finalY_bsp_pred[,RR])
@@ -267,6 +271,8 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
       finalY_bsp1_pred=matrix(finalY[Index_pred,RR],ncol=1)
       
       BSP_temp_coeff=matrix(limSolve::lsei(A=final_genome_BSP[[RR]][bootsam_FF,], B=finalY_bsp1, E=rep(1,dim(final_genome_BSP[[RR]])[2]), F=1)$X, ncol=1)
+#       BB=stats::lsfit(final_genome_BSP[[RR]][bootsam_FF,], finalY_bsp1, wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#       BSP_temp_coeff=unname(BB$coefficients)
       final_BSP_index=final_genome_BSP[[RR]][Index_pred,]%*%BSP_temp_coeff
       
       for (R in 1:length(Index_pred)){
@@ -294,6 +300,8 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
         final_genome_BSP1=cbind(final_genome_BSP1,matrix(Y_hat_BSP[[W[q]]],ncol=1))
       }
       BSP_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_BSP1, B=finalY[,RR], E=rep(1,dim(final_genome_BSP1)[2]), F=1)$X, ncol=1)
+#       BB=stats::lsfit(final_genome_BSP1, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#       BSP_coeff=unname(BB$coefficients)
     }
   }
   ptm2=proc.time()-ptm1
@@ -344,6 +352,8 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
         final_genome_Resub1=cbind(final_genome_Resub1,matrix(Y_hat_resub[[W[q]]],ncol=1))
       }
       Resub_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_Resub1, B=finalY[,RR], E=rep(1,dim(final_genome_Resub1)[2]), F=1)$X, ncol=1)
+#       BB=stats::lsfit(final_genome_Resub1, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#       Resub_coeff[[S]][,RR]=unname(BB$coefficients)
       Resub_error_all_mae[S,RR]=mean(abs(final_genome_Resub1%*%Resub_coeff[[S]][,RR]-finalY[,RR]))
       Resub_error_all_mse[S,RR]=mean((final_genome_Resub1%*%Resub_coeff[[S]][,RR]-finalY[,RR])^2)
       Resub_error_all_corr[S,RR]=cor(final_genome_Resub1%*%Resub_coeff[[S]][,RR],finalY[,RR])
@@ -382,6 +392,8 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
       for (q in 1:length(Serial[[S]])){
         final_genome_BSP6321=cbind(final_genome_BSP6321,matrix(W_hat[S,RR]*final_genome_BSP[[RR]][,W[q]]+(1-W_hat[S,RR])*final_genome_resub[[RR]][,W[q]],ncol=1))
       }
+#       BB=stats::lsfit(final_genome_BSP6321, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#       BSP632_coeff[[S]][,RR]=unname(BB$coefficients)
       BSP632_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_BSP6321, B=finalY[,RR], E=rep(1,dim(final_genome_BSP6321)[2]), F=1)$X, ncol=1)
     }
   }
@@ -453,6 +465,8 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
       for (q in 1:length(Serial[[S]])){
         final_genome_LOO=cbind(final_genome_LOO,matrix(Y_hat_LOO[[W[q]]][,RR],ncol=1))
       }
+#       BB=stats::lsfit(final_genome_LOO, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#       LOO_coeff[[S]][,RR]=unname(BB$coefficients)
       LOO_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_LOO, B=finalY[,RR], E=rep(1,dim(final_genome_LOO)[2]), F=1)$X, ncol=1)
       LOO_error_mae[S,RR]=mean(abs(final_genome_LOO%*%LOO_coeff[[S]][,RR]-finalY[,RR]))
       LOO_error_mse[S,RR]=mean((final_genome_LOO%*%LOO_coeff[[S]][,RR]-finalY[,RR])^2)
@@ -509,6 +523,8 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
       for (q in 1:length(Serial[[S]])){
         final_genome_Nfold=cbind(final_genome_Nfold,matrix(Y_hat_Nfold[[W[q]]][,RR],ncol=1))
       }
+#       BB=stats::lsfit(final_genome_Nfold, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#       Nfold_coeff[[S]][,RR]=unname(BB$coefficients)
       Nfold_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_Nfold, B=finalY[,RR], E=rep(1,dim(final_genome_Nfold)[2]), F=1)$X, ncol=1)
       Nfold_error_mae[S,RR]=mean(abs(final_genome_Nfold%*%Nfold_coeff[[S]][,RR]-finalY[,RR]))
       Nfold_error_mse[S,RR]=mean((final_genome_Nfold%*%Nfold_coeff[[S]][,RR]-finalY[,RR])^2)

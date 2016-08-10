@@ -53,6 +53,7 @@
 #' IntegratedPrediction(finalX,Y_train_Drug,Cell,Y_train_cell,Y_test_cell,Tree,Feature,Leaf)
 #'
 #' @importFrom caTools combs
+#' @importFrom stats lsfit
 #' @export
 
 IntegratedPrediction <- function(finalX,finalY_train,Cell,finalY_train_cell,finalY_test_cell,n_tree,m_feature,min_leaf){
@@ -166,6 +167,8 @@ IntegratedPrediction <- function(finalX,finalY_train,Cell,finalY_train_cell,fina
       for (q in 1:length(Serial[[S]])){
         final_genome_BSP1=cbind(final_genome_BSP1,matrix(Y_hat_BSP[[W[q]]],ncol=1))
       }
+#       BB=stats::lsfit(final_genome_BSP1, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#       BSP_coeff[[S]][,RR]=unname(BB$coefficients)
       BSP_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_BSP1, B=finalY[,RR], E=rep(1,dim(final_genome_BSP1)[2]), F=1)$X, ncol=1)
     }
   }

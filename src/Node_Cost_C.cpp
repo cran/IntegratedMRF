@@ -83,7 +83,8 @@ List split_node(NumericMatrix X, NumericMatrix Y, int m_feature, IntegerVector I
                         }
                         else if (Command == 2) {
                         int nrow = yk_left.nrow(), ncol = yk_left.ncol();
-                        double ybar[ncol], yhat[nrow][ncol];
+                        NumericVector ybar(ncol);
+                        NumericMatrix yhat(nrow,ncol);
                         for (int i = 0; i<ncol; i++) {
                         double sum_of_elements = 0;
                         for (int j = 0; j<nrow; j++) {
@@ -91,46 +92,46 @@ List split_node(NumericMatrix X, NumericMatrix Y, int m_feature, IntegerVector I
                         }
                         ybar[i] = sum_of_elements / nrow;
                         for (int j = 0; j<nrow; j++) {
-                        yhat[j][i] = yk_left(j, i) - ybar[i];
+                        yhat(j,i) = yk_left(j, i) - ybar[i];
                         }
                         }
             
-                        double mult[nrow][ncol];
+                        NumericMatrix mult(nrow,ncol);
                         /* Initializing elements of matrix mult to 0.*/
-                        int yhat_nrow = sizeof(yhat) / sizeof(yhat[0]);
+                        int yhat_nrow = yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
                         for (int i = 0; i<yhat_nrow; ++i)
                         for (int j = 0; j<Inv_Cov_Y.ncol(); ++j)
             {
-                        mult[i][j] = 0;
+                        mult(i,j) = 0;
             }
                         /* Multiplying matrix a and b and storing in array mult. */
                         for (int i = 0; i<yhat_nrow; ++i)
                         for (int j = 0; j<Inv_Cov_Y.ncol(); ++j)
                         for (int k = 0; k<Inv_Cov_Y.nrow(); ++k)
             {
-                        mult[i][j] += yhat[i][k] * Inv_Cov_Y(k, j);
+                        mult(i,j) += yhat(i,k) * Inv_Cov_Y(k, j);
             }
             
-                        double mult2[nrow][nrow];
-                        int r1 = sizeof(mult) / sizeof(mult[0]);
-                        int c1 = sizeof(mult[0]) / sizeof(mult[0][0]);
-                        int c2 = sizeof(yhat) / sizeof(yhat[0]);
+                        NumericMatrix mult2(nrow,nrow);
+                        int r1 = mult.nrow();//sizeof(mult) / sizeof(mult[0]);
+                        int c1 = mult.ncol();//sizeof(mult[0]) / sizeof(mult[0][0]);
+                        int c2 = yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
                         //int r2=sizeof(yhat[0]) / sizeof(yhat[0][0]);
                         for (int i = 0; i<r1; ++i)
                         for (int j = 0; j<c2; ++j)
             {
-                        mult2[i][j] = 0;
+                        mult2(i,j) = 0;
             }
             
                         for (int i = 0; i<r1; ++i)
                         for (int j = 0; j<c2; ++j)
                         for (int k = 0; k<c1; ++k)
             {
-                        mult2[i][j] += mult[i][k] * yhat[j][k];
+                        mult2(i,j) += mult(i,k) * yhat(j,k);
             }
             
                         for (int kk = 0; kk<nrow; kk++) {
-                        D_left += mult2[kk][kk];
+                        D_left += mult2(kk,kk);
                         }
                         }
             DL(nn, mm) = D_left;
@@ -149,7 +150,8 @@ List split_node(NumericMatrix X, NumericMatrix Y, int m_feature, IntegerVector I
                         }
                         else if (Command == 2) {
                         int nrow = yk_right.nrow(), ncol = yk_right.ncol();
-                        double ybar[ncol], yhat[nrow][ncol];
+                        NumericVector ybar(ncol);
+                        NumericMatrix yhat(nrow,ncol);
                         for (int i = 0; i<ncol; i++) {
                         double sum_of_elements = 0;
                         for (int j = 0; j<nrow; j++) {
@@ -157,46 +159,46 @@ List split_node(NumericMatrix X, NumericMatrix Y, int m_feature, IntegerVector I
                         }
                         ybar[i] = sum_of_elements / nrow;
                         for (int j = 0; j<nrow; j++) {
-                        yhat[j][i] = yk_right(j, i) - ybar[i];
+                        yhat(j,i) = yk_right(j, i) - ybar[i];
                         }
                         }
             
-                        double mult[nrow][ncol];
+                        NumericMatrix mult(nrow,ncol);
                         /* Initializing elements of matrix mult to 0.*/
-                        int yhat_nrow = sizeof(yhat) / sizeof(yhat[0]);
+                        int yhat_nrow = yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
                         for (int i = 0; i<yhat_nrow; ++i)
                         for (int j = 0; j<Inv_Cov_Y.ncol(); ++j)
             {
-                        mult[i][j] = 0;
+                        mult(i,j) = 0;
             }
                         /* Multiplying matrix a and b and storing in array mult. */
                         for (int i = 0; i<yhat_nrow; ++i)
                         for (int j = 0; j<Inv_Cov_Y.ncol(); ++j)
                         for (int k = 0; k<Inv_Cov_Y.nrow(); ++k)
             {
-                        mult[i][j] += yhat[i][k] * Inv_Cov_Y(k, j);
+                        mult(i,j) += yhat(i,k) * Inv_Cov_Y(k, j);
             }
             
-                        double mult2[nrow][nrow];
-                        int r1 = sizeof(mult) / sizeof(mult[0]);
-                        int c1 = sizeof(mult[0]) / sizeof(mult[0][0]);
-                        int c2 = sizeof(yhat) / sizeof(yhat[0]);
+                        NumericMatrix mult2(nrow,nrow);
+                        int r1 = mult.nrow();//sizeof(mult) / sizeof(mult[0]);
+                        int c1 = mult.ncol();//sizeof(mult[0]) / sizeof(mult[0][0]);
+                        int c2 = yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
                         //int r2=sizeof(yhat[0]) / sizeof(yhat[0][0]);
                         for (int i = 0; i<r1; ++i)
                         for (int j = 0; j<c2; ++j)
             {
-                        mult2[i][j] = 0;
+                        mult2(i,j) = 0;
             }
             
                         for (int i = 0; i<r1; ++i)
                         for (int j = 0; j<c2; ++j)
                         for (int k = 0; k<c1; ++k)
             {
-                        mult2[i][j] += mult[i][k] * yhat[j][k];
+                        mult2(i,j) += mult(i,k) * yhat(j,k);
             }
             
                         for (int kk = 0; kk<nrow; kk++) {
-                        D_right += mult2[kk][kk];
+                        D_right += mult2(kk,kk);
                         }
                         }
                         DR(nn, mm) = D_right;
@@ -255,9 +257,12 @@ List split_node(NumericMatrix X, NumericMatrix Y, int m_feature, IntegerVector I
         One_model(4)= Threshold_value;
         int j=i;
         List Model11= Model(j);
-        while(Model11(0)<3){
+        int Temp2=Model11(0);
+        int Temp3=3;
+        while(Temp2<Temp3){
           j=j+1;
           Model11= Model(j);
+          Temp2=Model11(0);
         }
         NumericVector next(2);
         next[0]=j;
@@ -361,7 +366,8 @@ List splitt(NumericMatrix X, NumericMatrix Y, int m_feature, NumericVector Index
 			}
 			else if (Command == 2) {
 				int nrow = yk_left.nrow(), ncol = yk_left.ncol();
-				double ybar[ncol], yhat[nrow][ncol];
+				NumericVector ybar(ncol);
+        NumericMatrix yhat(nrow,ncol);
 				for (int i = 0; i<ncol; i++) {
 					double sum_of_elements = 0;
 					for (int j = 0; j<nrow; j++) {
@@ -369,46 +375,46 @@ List splitt(NumericMatrix X, NumericMatrix Y, int m_feature, NumericVector Index
 					}
 					ybar[i] = sum_of_elements / nrow;
 					for (int j = 0; j<nrow; j++) {
-						yhat[j][i] = yk_left(j, i) - ybar[i];
+						yhat(j,i) = yk_left(j, i) - ybar[i];
 					}
 				}
 
-				double mult[nrow][ncol];
+				NumericMatrix mult(nrow,ncol);
 				/* Initializing elements of matrix mult to 0.*/
-				int yhat_nrow = sizeof(yhat) / sizeof(yhat[0]);
+				int yhat_nrow = yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
 				for (int i = 0; i<yhat_nrow; ++i)
 					for (int j = 0; j<Inv_Cov_Y.ncol(); ++j)
 					{
-						mult[i][j] = 0;
+						mult(i,j) = 0;
 					}
 				/* Multiplying matrix a and b and storing in array mult. */
 				for (int i = 0; i<yhat_nrow; ++i)
 					for (int j = 0; j<Inv_Cov_Y.ncol(); ++j)
 						for (int k = 0; k<Inv_Cov_Y.nrow(); ++k)
 						{
-							mult[i][j] += yhat[i][k] * Inv_Cov_Y(k, j);
+							mult(i,j) += yhat(i,k) * Inv_Cov_Y(k, j);
 						}
 
-				double mult2[nrow][nrow];
-				int r1 = sizeof(mult) / sizeof(mult[0]);
-				int c1 = sizeof(mult[0]) / sizeof(mult[0][0]);
-				int c2 = sizeof(yhat) / sizeof(yhat[0]);
+				NumericMatrix mult2(nrow,nrow);
+				int r1 = mult.nrow();//sizeof(mult) / sizeof(mult[0]);
+				int c1 = mult.ncol();//sizeof(mult[0]) / sizeof(mult[0][0]);
+				int c2 = yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
 				//int r2=sizeof(yhat[0]) / sizeof(yhat[0][0]);
 				for (int i = 0; i<r1; ++i)
 					for (int j = 0; j<c2; ++j)
 					{
-						mult2[i][j] = 0;
+						mult2(i,j) = 0;
 					}
 
 				for (int i = 0; i<r1; ++i)
 					for (int j = 0; j<c2; ++j)
 						for (int k = 0; k<c1; ++k)
 						{
-							mult2[i][j] += mult[i][k] * yhat[j][k];
+							mult2(i,j) += mult(i,k) * yhat(j,k);
 						}
 
 				for (int kk = 0; kk<nrow; kk++) {
-					D_left += mult2[kk][kk];
+					D_left += mult2(kk,kk);
 				}
 			}
 			DL(nn, mm) = D_left;
@@ -427,7 +433,8 @@ List splitt(NumericMatrix X, NumericMatrix Y, int m_feature, NumericVector Index
 			}
 			else if (Command == 2) {
 				int nrow = yk_right.nrow(), ncol = yk_right.ncol();
-				double ybar[ncol], yhat[nrow][ncol];
+				NumericVector ybar(ncol);
+        NumericMatrix yhat(nrow,ncol);
 				for (int i = 0; i<ncol; i++) {
 					double sum_of_elements = 0;
 					for (int j = 0; j<nrow; j++) {
@@ -435,46 +442,46 @@ List splitt(NumericMatrix X, NumericMatrix Y, int m_feature, NumericVector Index
 					}
 					ybar[i] = sum_of_elements / nrow;
 					for (int j = 0; j<nrow; j++) {
-						yhat[j][i] = yk_right(j, i) - ybar[i];
+						yhat(j,i) = yk_right(j, i) - ybar[i];
 					}
 				}
 
-				double mult[nrow][ncol];
+				NumericMatrix mult(nrow,ncol);
 				/* Initializing elements of matrix mult to 0.*/
-				int yhat_nrow = sizeof(yhat) / sizeof(yhat[0]);
+				int yhat_nrow = yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
 				for (int i = 0; i<yhat_nrow; ++i)
 					for (int j = 0; j<Inv_Cov_Y.ncol(); ++j)
 					{
-						mult[i][j] = 0;
+						mult(i,j) = 0;
 					}
 				/* Multiplying matrix a and b and storing in array mult. */
 				for (int i = 0; i<yhat_nrow; ++i)
 					for (int j = 0; j<Inv_Cov_Y.ncol(); ++j)
 						for (int k = 0; k<Inv_Cov_Y.nrow(); ++k)
 						{
-							mult[i][j] += yhat[i][k] * Inv_Cov_Y(k, j);
+							mult(i,j) += yhat(i,k) * Inv_Cov_Y(k, j);
 						}
 
-				double mult2[nrow][nrow];
-				int r1 = sizeof(mult) / sizeof(mult[0]);
-				int c1 = sizeof(mult[0]) / sizeof(mult[0][0]);
-				int c2 = sizeof(yhat) / sizeof(yhat[0]);
+				NumericMatrix mult2(nrow,nrow);
+				int r1 = mult.nrow();//sizeof(mult) / sizeof(mult[0]);
+				int c1 = mult.ncol();//sizeof(mult[0]) / sizeof(mult[0][0]);
+				int c2 = yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
 				//int r2=sizeof(yhat[0]) / sizeof(yhat[0][0]);
 				for (int i = 0; i<r1; ++i)
 					for (int j = 0; j<c2; ++j)
 					{
-						mult2[i][j] = 0;
+						mult2(i,j) = 0;
 					}
 
 				for (int i = 0; i<r1; ++i)
 					for (int j = 0; j<c2; ++j)
 						for (int k = 0; k<c1; ++k)
 						{
-							mult2[i][j] += mult[i][k] * yhat[j][k];
+							mult2(i,j) += mult(i,k) * yhat(j,k);
 						}
 
 				for (int kk = 0; kk<nrow; kk++) {
-					D_right += mult2[kk][kk];
+					D_right += mult2(kk,kk);
 				}
 			}
 			DR(nn, mm) = D_right;
@@ -552,7 +559,8 @@ double Node_cost(NumericMatrix y, NumericMatrix Inv_Cov_Y, int Command){
       }
     } else if (Command==2){
       int nrow=y.nrow(), ncol=y.ncol();
-      double ybar[ncol], yhat[nrow][ncol];
+      NumericVector ybar(ncol);
+      NumericMatrix yhat(nrow,ncol);
       for (int i=0;i<ncol;i++){
         double sum_of_elements = 0;
         for (int j=0;j<nrow;j++){
@@ -560,46 +568,46 @@ double Node_cost(NumericMatrix y, NumericMatrix Inv_Cov_Y, int Command){
         }
         ybar[i]=sum_of_elements/nrow ;
         for (int j=0; j<nrow;j++){
-          yhat[j][i] =y(j,i)-ybar[i];
+          yhat(j,i) =y(j,i)-ybar[i];
         }
       }
 
-      double mult[nrow][ncol];
+      NumericMatrix mult(nrow,ncol);
       /* Initializing elements of matrix mult to 0.*/
-      int yhat_nrow=sizeof(yhat) / sizeof(yhat[0]);
+      int yhat_nrow=yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
       for(int i=0; i<yhat_nrow; ++i)
         for(int j=0; j<Inv_Cov_Y.ncol(); ++j)
       {
-        mult[i][j]=0;
+        mult(i,j)=0;
       }
       /* Multiplying matrix a and b and storing in array mult. */
       for(int i=0; i<yhat_nrow; ++i)
         for(int j=0; j<Inv_Cov_Y.ncol(); ++j)
           for(int k=0; k<Inv_Cov_Y.nrow(); ++k)
         {
-          mult[i][j]+=yhat[i][k]*Inv_Cov_Y(k,j);
+          mult(i,j)+=yhat(i,k)*Inv_Cov_Y(k,j);
         }
 
-      double mult2[nrow][nrow];
-      int r1=sizeof(mult) / sizeof(mult[0]);
-      int c1=sizeof(mult[0]) / sizeof(mult[0][0]);
-      int c2=sizeof(yhat) / sizeof(yhat[0]);
+      NumericMatrix mult2(nrow,nrow);
+      int r1=mult.nrow();//sizeof(mult) / sizeof(mult[0]);
+      int c1=mult.ncol();//sizeof(mult[0]) / sizeof(mult[0][0]);
+      int c2=yhat.nrow();//sizeof(yhat) / sizeof(yhat[0]);
       //int r2=sizeof(yhat[0]) / sizeof(yhat[0][0]);
       for(int i=0; i<r1; ++i)
        for(int j=0; j<c2; ++j)
       {
-        mult2[i][j]=0;
+        mult2(i,j)=0;
       }
 
       for(int i=0; i<r1; ++i)
         for(int j=0; j<c2; ++j)
           for(int k=0; k<c1; ++k)
         {
-          mult2[i][j]+=mult[i][k]*yhat[j][k];
+          mult2(i,j)+=mult(i,k)*yhat(j,k);
         }
 
       for(int kk=0; kk<nrow; kk++){
-        D +=mult2[kk][kk];
+        D +=mult2(kk,kk);
       }
     }
 
@@ -617,7 +625,10 @@ List predicting(List Single_Model, int i, NumericVector xt, int Variable_number)
   for (int ii=0; ii<2; ii++){
     threshold = threshold+threshold_values[ii]/2;
   }
-  if (Model(0)==0){
+  int Temp2=Model(0);
+  int Temp3=0;
+  int Temp4=1;
+  if (Temp2==Temp3){
     int feature_no=Model(3);
     feature_no=feature_no-1;
     feature_value=xt(feature_no);
@@ -628,7 +639,7 @@ List predicting(List Single_Model, int i, NumericVector xt, int Variable_number)
     else  {
       Result=predicting(Single_Model,feat[1],xt,Variable_number);
     }
-  } else if(Model(0)==1){
+  } else if(Temp2==Temp4){
     NumericMatrix Model1=Model(1);
     NumericVector output(Variable_number);
     for (int ii=0; ii<Variable_number; ii++){

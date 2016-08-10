@@ -21,6 +21,8 @@
 #' @export
 error_calculation <- function(final_pred,final_actual){
   #   library(limSolve)
+#   BB=stats::lsfit(final_pred, final_actual, wt = NULL, intercept = FALSE, tolerance = 1e-07)
+#   a0=unname(BB$coefficients)
   a0=matrix(limSolve::lsei(A=final_pred, B=final_actual, E=rep(1,dim(final_pred)[2]), F=1)$X, ncol=1)
   final_pred2=final_pred%*%a0
   
