@@ -1,112 +1,5 @@
-#' Weights for combination of predictions from different data subtypes using Least Square Regression based on various error estimation techniques 
-#' 
-#' Calculates combination weights for different subtypes of dataset combinations to generate integrated Random Forest (RF) or Multivariate 
-#' Random Forest (MRF) model based on different error estimation models such as Bootstrap, 0.632+ Bootstrap, N-fold cross validation or Leave one out.   
-#'  
-#' @param finalX List of Matrices where each matrix represents a specific data subtype (such as genomic characterizations for 
-#' drug sensitivity prediction). Each subtype can have different types of features. For example, if there are three subtypes containing
-#'  100, 200 and 250 features respectively,  finalX will be a list containing 3 matrices of sizes M x 100, M x 200 and M x 250 
-#'  where M is the number of Samples. 
-#' @param finalY_train A M x T matrix of output features for training samples, where M is number of samples and T is the number of output features. 
-#' The dataset is assumed to contain no missing values. If there are missing values, an imputation method should be applied before using the function. 
-#' A function 'Imputation' is included within the package.
-#' @param Cell It contains a list of samples (the samples can be represented either numerically by indices or by names) for each data subtype. 
-#' For the example of 3 data subtypes, it will be a list containing 3 arrays where each array contains the sample information for each data subtype.
-#' @param finalY_train_cell Sample names of output features for training samples
-#' @param n_tree Number of trees in the forest, which must be positive integer
-#' @param m_feature Number of randomly selected features considered for a split in each regression tree node, Valid Input is a positive integer, which is less than N (which is equal to number of input features for the smallest genomic characterization)
-#' @param min_leaf Minimum number of samples in the leaf node, which must be positive integer and less than or equal to M (number of training samples) 
-#' @param Confidence_Level Confidence level for calculation of confidence interval (User Defined), which must be between 0 and 100
-#' @return 
-#' List with the following components: 
-#' \item{BSP_coeff}{Combination weights using Bootstrap Error Estimation Model, where index is in list format. 
-#' If the number of genomic characterizations or subtypes of dataset is 5, there will be 2^5-1=31 list of weights}
-#' \item{Nfold_coeff}{Combination weights using N fold cross validation Error Estimation Model, where index is in list format. 
-#' If the number of genomic characterizations or subtypes of dataset is 5, there will be 2^5-1=31 list of weights}
-#' \item{BSP632plus_coeff}{Combination weights using 0.632+ Bootstrap Error Estimation Model, where index is in list format. 
-#' If the number of genomic characterizations or subtypes of dataset is 5, there will be 2^5-1=31 list of weights}
-#' \item{LOO_coeff}{Combination weights using Leave-One-Out Error Estimation Model, where index is in list format. 
-#' If the number of genomic characterizations or subtypes of dataset is 5, there will be 2^5-1=31 list of weights} 
-#' \item{Error}{Matrix of Mean Absolute Error, Mean Square Error and correlation between actual and predicted responses for integrated model based 
-#' on Bootstrap, N fold cross validation, 0.632+ Bootstrap and Leave-one-out error estimation sampling techniques for the integrated model 
-#' containing all the data subtypes}
-#' \item{Confidence Interval}{Low and High confidence interval for a user defined confidence level for the drug using Jackknife-After-Bootstrap Approach in a list}
-#' \item{BSP_error_all_mae}{Bootstrap Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
-#' combinations and R is the number of output responses. C is in decreasing order, which means first value is combination of all subtypes 
-#' and next ones are in decreasing order. For example, if a dataset has 3 subtypes, then C is equal to 2^3-1=7.  The ordering of C is the combination of
-#' subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
-#' \item{Nfold_error_all_mae}{N fold cross validation Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
-#' combinations and R is the number of output responses. C is in decreasing order, which means first value is combination of all subtypes 
-#' and next ones are in decreasing order. For example, if a dataset has 3 subtypes, then C is equal to 2^3-1=7.  The ordering of C is the combination of
-#' subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
-#' \item{BSP632plus_error_all_mae}{0.632+ Bootstrap Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
-#' combinations and R is the number of output responses. C is in decreasing order, which means first value is combination of all subtypes 
-#' and next ones are in decreasing order. For example, if a dataset has 3 subtypes, then C is equal to 2^3-1=7.  The ordering of C is the combination of
-#' subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
-#' \item{LOO_error_all_mae}{Leave One Out Mean Absolute Errors (MAE) for all combinations of the dataset subtypes. Size C x R, where C is the number of 
-#' combinations and R is the number of output responses. C is in decreasing order, which means first value is combination of all subtypes 
-#' and next ones are in decreasing order. For example, if a dataset has 3 subtypes, then C is equal to 2^3-1=7.  The ordering of C is the combination of
-#' subtypes [1 2 3], [1 2], [1 3], [2 3], [1], [2], [3] }
-#' The function also returns figures of different error estimations in .tiff format 
-#' @details
-#' The function takes all the subtypes of dataset in matrix format and its corresponding sample information.
-#' For calculation purpose, we have considered the data of the samples that are common in all the subtypes and output training responses.
-#' For example, consider a dataset of 3 sub-types with different number of samples and features, with indices of samples in subtype 1, 2, 3  and output feature matrix
-#' is 1:10, 3:15, 5:16 and 5:11 respectively. Thus, features of sample index 5:10 (common to all subtypes and output feature matrix) of all subtypes and output feature 
-#' matrix will be selected and considered for all calculations. 
-#' 
-#' For M x N dataset, N number of bootstrap sampling sets are considered. For each bootstrap sampling set and each subtype, a Random Forest (RF) 
-#' or, Multivariate Random Forest (MRF) model is generated, which is used for calculating the prediction performance for out-of-bag samples.  
-#' The prediction performance for each subtype of the dataset is based on the averaging over different bootstrap training sets. 
-#' The combination weights (regression coefficients) for each combination of subtypes are generated using least Square Regression from the 
-#' individual subtype predictions and used later to calculate mean absolute error, mean square error and correlation coefficient between 
-#' predicted and actual values.
-#' 
-#' For N-fold cross validation error estimation with M cell lines, N models are generated for each subtype of dataset, where for each partition (M/N)*(N-1) cell
-#' lines are used for training and the remaining cell lines are used to 
-#' estimate errors and combination weights for different data subtype combinations.   
-#' 
-#' In 0.632 Bootstrap error estimation, bootstrap and re-substitution error estimates are combined beasd on 
-#' 0.632xBootstrap Error + 0.368xRe-substitution Error. While 0.632+ Bootstrap error estimation considers the overfitting of re-substitution error
-#' with no information error rate \eqn{\gamma}. An estimate of \eqn{\gamma} is obtained by permuting the responses \eqn{y[i]} and predictors \eqn{x[j]}.
-#' \deqn{\gamma=sum(sum(error(x[j],y[i]),j=1,m),i=1,m)/m^2} 
-#' The relative overfitting rate is defined as \eqn{R=(Bootstrap Error-Resubstitution Error)/(\gamma-Resubstitution Error)} and weight distribution
-#' between bootstrap error and Re-substitution Error is defined as \eqn{w=0.632/(1-0.368*R)}. So, 0.632+ Bootstrap error is equal to 
-#' \eqn{(1-w)*Bootstrap Error+w*Resubstitution Error}.
-#' These prediction results are then used to compute the errors and combination weights for different data subtype combinations.
-#' 
-#' Confidence Interval has been calculated using Jackkniffe-After-Bootstrap Approach and prediction result of bootstrap error estimation.
-#' 
-#' For leave-one-out error estimation using M cell lines, M models are generated for each subtype of dataset, which are then used to 
-#' calculate the errors and combination weights for different data subtype combinations.
-#' @examples
-#' library(IntegratedMRF)
-#' data(Dream_Dataset)
-#' Tree=1
-#' Feature=1
-#' Leaf=10
-#' Confidence=80
-#' finalX=Dream_Dataset[[1]]
-#' Cell=Dream_Dataset[[2]]
-#' Y_train_Dream=Dream_Dataset[[3]]
-#' Y_train_cell=Dream_Dataset[[4]]
-#' Y_test=Dream_Dataset[[5]]
-#' Y_test_cell=Dream_Dataset[[6]]
-#' Drug=c(1,2,3)
-#' Y_train_Drug=matrix(Y_train_Dream[,Drug],ncol=length(Drug))
-#' Result=Combination(finalX,Y_train_Drug,Cell,Y_train_cell,Tree,Feature,Leaf,Confidence)
-#' 
-#' @importFrom grDevices dev.off tiff
-#' @importFrom caTools combs
-#' @importFrom stats cor lsfit
-#' @references
-#' Wan, Qian, and Ranadip Pal. "An ensemble based top performing approach for NCI-DREAM drug sensitivity prediction challenge." PloS one 9.6 (2014): e101183.
-#' 
-#' Efron, Bradley, and Robert Tibshirani. "Improvements on cross-validation: the 632+ bootstrap method." Journal of the American Statistical Association 92.438 (1997): 548-560.
-#' @export
-
 Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feature,min_leaf,Confidence_Level){
-  
+
   Serial=NULL
   for (p in length(Cell):1){
     nk=combs(1:length(Cell),p)
@@ -120,7 +13,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   for (q in 1:length(Cell)){
     Common_cell_train=intersect(Common_cell_train,Cell[[q]])
   }
-  
+
   final=NULL
   MM_feature=rep(0,length(Cell))
   for (q in 1:length(Cell)){
@@ -136,12 +29,12 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
     Command=2
   }else if(Variable_number==1){
     Command=1
-  } 
+  }
   if (class(n_tree)=="character" || n_tree%%1!=0 || n_tree<1) stop('Number of trees in the forest can not be fractional or negative integer or string')
   if (class(m_feature)=="character" || m_feature%%1!=0 || m_feature<1 || m_feature>min(MM_feature)) stop('Number of randomly selected features considered for a split can not be fractional or negative integer or string or greater than minimum number of features')
   if (class(min_leaf)=="character" || min_leaf%%1!=0 || min_leaf<1 || min_leaf>nrow(finalY)) stop('Minimum leaf number can not be fractional or negative integer or string or greater than number of samples')
   if (class(Confidence_Level)=="character" || Confidence_Level>100 || Confidence_Level<1) stop('Confidence Interval can not be negative integer or string or greater than 100')
-  
+
   ################################## BSP ###############################
   ptm1=proc.time()
   if (nrow(finalY)<50){
@@ -151,18 +44,18 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   }else if (nrow(finalY)>=101){
     N=floor(nrow(finalY)/3)
   }
-  
+
   Y_hat_BSP=NULL
   for (q in 1:length(Cell)){
     Y_hat_BSP[[q]]=matrix(rep(0,length(finalY)),ncol=ncol(finalY))
   }
   bootsam_FF=NULL
   Index=NULL
-  Index=1:nrow(finalY) 
+  Index=1:nrow(finalY)
   theta <- function(x){x}
   results <- bootstrap::bootstrap(Index,N,theta) #no indics, gives number
   bootsam=results$thetastar
-  
+
   Store=rep( list(NULL), length(Cell) )
   for (q in 1:length(Cell)){
     Store[[q]]=rep( list(NULL), nrow(finalY) )
@@ -186,25 +79,24 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
     bootsam_FF=bootsam[,FF]
     Index_FF=unique(bootsam_FF)
     Index_pred=setdiff(Index, Index_FF)
-    
+
     finalY_bsp=matrix(finalY[bootsam_FF,],ncol=Variable_number)
     finalY_bsp_pred=matrix(finalY[Index_pred,],ncol=Variable_number)
-    
+
     final_genome=NULL
     finalX_bsp=NULL
     finalX_bsp_pred=NULL
     finalY_pred=NULL
-    
+
     for (q in 1:length(Cell)){
       finalX_bsp[[q]]=final[[q]][bootsam_FF,]
       finalX_bsp_pred[[q]]=final[[q]][Index_pred,]
       finalY_pred[[q]]=build_forest_predict(finalX_bsp[[q]], finalY_bsp, n_tree, m_feature, min_leaf, finalX_bsp_pred[[q]])
-      #final_genome=cbind(final_genome,finalY_pred[[q]])
       for (R in 1:length(Index_pred)){
         Store[[q]][[Index_pred[R]]]=rbind(Store[[q]][[Index_pred[R]]],finalY_pred[[q]][R,])
       }
     }
-    
+
     for (RR in 1:Variable_number){
       for (S in 1:length(Serial)){
         final_genome_BSP1=NULL
@@ -213,8 +105,6 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
           final_genome_BSP1=cbind(final_genome_BSP1,matrix(finalY_pred[[W[q]]][,RR],ncol=1))
         }
         BSP_temp_coeff1=matrix(limSolve::lsei(A=final_genome_BSP1, B=matrix(finalY_bsp_pred[,RR],ncol=1), E=rep(1,dim(final_genome_BSP1)[2]), F=1)$X, ncol=1)
-#         BB=stats::lsfit(final_genome_BSP1, matrix(finalY_bsp_pred[,RR],ncol=1), wt = NULL, intercept = FALSE, tolerance = 1e-07)
-#         BSP_temp_coeff1=unname(BB$coefficients)
         BSP_error_alll_mae[[RR]][S,FF]=mean(abs(final_genome_BSP1%*%BSP_temp_coeff1-finalY_bsp_pred[,RR]))
         BSP_error_alll_mse[[RR]][S,FF]=mean((final_genome_BSP1%*%BSP_temp_coeff1-finalY_bsp_pred[,RR])^2)
         BSP_error_alll_corr[[RR]][S,FF]=stats::cor(final_genome_BSP1%*%BSP_temp_coeff1,finalY_bsp_pred[,RR])
@@ -246,8 +136,8 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
     }
     BSP_errors=cbind( BSP_errors,rbind(BSP_error_all_mae[1,RR],BSP_error_all_mse[1,RR],BSP_error_all_corr[1,RR]))
   }
-  
-  
+
+
   final_genome_BSP=NULL
   for (RR in 1:Variable_number){
     final_genome_BSP[[RR]]=matrix(rep(0,length(Cell)*nrow(finalY)),nrow=nrow(finalY))
@@ -266,15 +156,13 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
       bootsam_FF=bootsam[,FF]
       Index_FF=unique(bootsam_FF)
       Index_pred=setdiff(Index, Index_FF)
-      
+
       finalY_bsp1=matrix(finalY[bootsam_FF,RR],ncol=1)
       finalY_bsp1_pred=matrix(finalY[Index_pred,RR],ncol=1)
-      
+
       BSP_temp_coeff=matrix(limSolve::lsei(A=final_genome_BSP[[RR]][bootsam_FF,], B=finalY_bsp1, E=rep(1,dim(final_genome_BSP[[RR]])[2]), F=1)$X, ncol=1)
-#       BB=stats::lsfit(final_genome_BSP[[RR]][bootsam_FF,], finalY_bsp1, wt = NULL, intercept = FALSE, tolerance = 1e-07)
-#       BSP_temp_coeff=unname(BB$coefficients)
       final_BSP_index=final_genome_BSP[[RR]][Index_pred,]%*%BSP_temp_coeff
-      
+
       for (R in 1:length(Index_pred)){
         Store2[[Index_pred[R]]]=c(Store2[[Index_pred[R]]],final_BSP_index[R,])
       }
@@ -288,7 +176,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   for (S in 1:length(Serial)){
     BSP_coeff[[S]]=matrix(rep(0,length(Serial[[S]])*Variable_number),ncol=Variable_number)
   }
-  
+
   for (RR in 1:Variable_number){
     for (q in 1:length(Cell)){
       Y_hat_BSP[[q]]=final_genome_BSP[[RR]][,q]
@@ -300,8 +188,6 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
         final_genome_BSP1=cbind(final_genome_BSP1,matrix(Y_hat_BSP[[W[q]]],ncol=1))
       }
       BSP_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_BSP1, B=finalY[,RR], E=rep(1,dim(final_genome_BSP1)[2]), F=1)$X, ncol=1)
-#       BB=stats::lsfit(final_genome_BSP1, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
-#       BSP_coeff=unname(BB$coefficients)
     }
   }
   ptm2=proc.time()-ptm1
@@ -329,8 +215,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
     final_resub[,RR]=error[[1]]
   }
   Resub_errors=rbind(Resub_error_mae,Resub_error_mse,Resub_corr)
-  
-  # Resub_coeff=matrix(lsei(A=final_genome_resub, B=finalY, E=rep(1,dim(final_genome_resub)[2]), F=1)$X, ncol=1)
+
   Resub_coeff=rep(list(NULL), length(Serial))
   Y_hat_resub=NULL
   for (S in 1:length(Serial)){
@@ -352,8 +237,6 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
         final_genome_Resub1=cbind(final_genome_Resub1,matrix(Y_hat_resub[[W[q]]],ncol=1))
       }
       Resub_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_Resub1, B=finalY[,RR], E=rep(1,dim(final_genome_Resub1)[2]), F=1)$X, ncol=1)
-#       BB=stats::lsfit(final_genome_Resub1, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
-#       Resub_coeff[[S]][,RR]=unname(BB$coefficients)
       Resub_error_all_mae[S,RR]=mean(abs(final_genome_Resub1%*%Resub_coeff[[S]][,RR]-finalY[,RR]))
       Resub_error_all_mse[S,RR]=mean((final_genome_Resub1%*%Resub_coeff[[S]][,RR]-finalY[,RR])^2)
       Resub_error_all_corr[S,RR]=cor(final_genome_Resub1%*%Resub_coeff[[S]][,RR],finalY[,RR])
@@ -392,8 +275,6 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
       for (q in 1:length(Serial[[S]])){
         final_genome_BSP6321=cbind(final_genome_BSP6321,matrix(W_hat[S,RR]*final_genome_BSP[[RR]][,W[q]]+(1-W_hat[S,RR])*final_genome_resub[[RR]][,W[q]],ncol=1))
       }
-#       BB=stats::lsfit(final_genome_BSP6321, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
-#       BSP632_coeff[[S]][,RR]=unname(BB$coefficients)
       BSP632_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_BSP6321, B=finalY[,RR], E=rep(1,dim(final_genome_BSP6321)[2]), F=1)$X, ncol=1)
     }
   }
@@ -405,19 +286,17 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   Low_confidence=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
   High_confidence=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
   mean_D=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
-  for (RR in 1:Variable_number){  
+  for (RR in 1:Variable_number){
     for (S in 1:length(Serial)){
       err=0.632*Error_BSP_Jack[[RR]][S,]+0.368*Error_resub_Jack[[RR]][S,]
       #err=abs((0.632*final_BSP[,RR]+0.368*final_resub[,RR])-finalY[,RR])
       n=length(err)
-      s=sqrt(((n-1)/(n*1))*sum((err-mean(err))^2))
+      s=sqrt((1/(n*(n-1)))*sum((err-mean(err))^2))
       alpha=1-(Confidence_Level/100)
-      # z_alpha=sqrt(2)*erfinv(2*alpha/2-1);
-      z_alpha=stats::qnorm((1+2*alpha/2-1)/2)
-      # z_1alpha=sqrt(2)*erfinv(2*(1-alpha/2)-1);
-      z_1alpha=stats::qnorm((1+2*(1-alpha/2)-1)/2)
+      z_alpha=stats::qnorm((1+2*alpha/2-1)/2) # z_alpha=sqrt(2)*erfinv(2*alpha/2-1)
+      z_1alpha=stats::qnorm((1+2*(1-alpha/2)-1)/2) # z_1alpha=sqrt(2)*erfinv(2*(1-alpha/2)-1)
       mean_D[S,RR]=mean(err)
-      
+
       Low_confidence[S,RR]=max(0,(mean(err)-(s*abs(z_alpha))))# Z_a/2 error function or, quantile function
       High_confidence[S,RR]=mean(err)+(s*(z_1alpha))
     }
@@ -426,18 +305,11 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   message("Elapsed Time for Jackknife Confidence Interval Calculation is ", ptm2[[3]])
   ################################ Leave One out error #######################################
   ptm1 <- proc.time()
-  #   if (nrow(finalY)<50){
-  #     N_LOO=floor(0.75*nrow(finalY))
-  #   }else if (nrow(finalY)>=50 && nrow(finalY)<101){
-  #     N_LOO=floor(nrow(finalY)/2)
-  #   }else if (nrow(finalY)>=101){
-  #     N_LOO=floor(nrow(finalY)/5)
-  #   }
   Y_hat_LOO=NULL
   for (q in 1:length(Cell)){
     Y_hat_LOO[[q]]=matrix(rep(0,length(finalY)),ncol=Variable_number)
   }
-  
+
   for (q in 1:length(Cell)){
     for (FF in 1:nrow(finalY)){
       Index2=1:nrow(finalY)
@@ -453,7 +325,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   LOO_error_mae=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
   LOO_error_mse=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
   LOO_corr=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
-  
+
   LOO_coeff=rep(list(NULL), length(Serial))
   for (S in 1:length(Serial)){
     LOO_coeff[[S]]=matrix(rep(0,length(Serial[[S]])*Variable_number),ncol=Variable_number)
@@ -465,8 +337,6 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
       for (q in 1:length(Serial[[S]])){
         final_genome_LOO=cbind(final_genome_LOO,matrix(Y_hat_LOO[[W[q]]][,RR],ncol=1))
       }
-#       BB=stats::lsfit(final_genome_LOO, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
-#       LOO_coeff[[S]][,RR]=unname(BB$coefficients)
       LOO_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_LOO, B=finalY[,RR], E=rep(1,dim(final_genome_LOO)[2]), F=1)$X, ncol=1)
       LOO_error_mae[S,RR]=mean(abs(final_genome_LOO%*%LOO_coeff[[S]][,RR]-finalY[,RR]))
       LOO_error_mse[S,RR]=mean((final_genome_LOO%*%LOO_coeff[[S]][,RR]-finalY[,RR])^2)
@@ -476,7 +346,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   LOO_errors=rbind(LOO_error_mae[1,],LOO_error_mse[1,],LOO_corr[1,])
   ptm2=proc.time()-ptm1
   message("Elapsed Time for Leave-one-out Error Estimation is ", ptm2[[3]])
-  
+
   ################################ N_fold cross validation error #######################################
   ptm1 <- proc.time()
   if (nrow(finalY)<50){
@@ -511,7 +381,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   Nfold_error_mae=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
   Nfold_error_mse=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
   Nfold_corr=matrix(rep(0,length(Serial)*Variable_number),ncol=Variable_number)
-  
+
   Nfold_coeff=rep(list(NULL), length(Serial))
   for (S in 1:length(Serial)){
     Nfold_coeff[[S]]=matrix(rep(0,length(Serial[[S]])*Variable_number),ncol=Variable_number)
@@ -523,8 +393,6 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
       for (q in 1:length(Serial[[S]])){
         final_genome_Nfold=cbind(final_genome_Nfold,matrix(Y_hat_Nfold[[W[q]]][,RR],ncol=1))
       }
-#       BB=stats::lsfit(final_genome_Nfold, finalY[,RR], wt = NULL, intercept = FALSE, tolerance = 1e-07)
-#       Nfold_coeff[[S]][,RR]=unname(BB$coefficients)
       Nfold_coeff[[S]][,RR]=matrix(limSolve::lsei(A=final_genome_Nfold, B=finalY[,RR], E=rep(1,dim(final_genome_Nfold)[2]), F=1)$X, ncol=1)
       Nfold_error_mae[S,RR]=mean(abs(final_genome_Nfold%*%Nfold_coeff[[S]][,RR]-finalY[,RR]))
       Nfold_error_mse[S,RR]=mean((final_genome_Nfold%*%Nfold_coeff[[S]][,RR]-finalY[,RR])^2)
@@ -534,7 +402,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   Nfold_errors=rbind(Nfold_error_mae[1,],Nfold_error_mse[1,],Nfold_corr[1,])
   ptm2=proc.time()-ptm1
   message("Elapsed Time for N-fold cross validation Error Estimation is ", ptm2[[3]])
-  
+
   Result=NULL
   Result[[1]]=BSP_coeff
   Result[[2]]=Nfold_coeff
@@ -551,7 +419,7 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   #### Figures ######
   Error_Matrix1=rbind(Result[[7]],Result[[8]],Result[[9]],Result[[10]])
   Error_Matrix2=matrix(c(rep("BSP_error",length(Serial)),rep("N_fold_error",length(Serial)),rep("0.632+ BSP_error",length(Serial)),rep("LOO_error",length(Serial))),ncol=1)
-  
+
   SS=matrix(rep(0,length(Serial)*length(Cell)),ncol=length(Cell))
   for (i in 1:length(Serial)){
     for (j in 1:length(Cell)){
@@ -577,13 +445,13 @@ Combination <- function(finalX,finalY_train,Cell,finalY_train_cell,n_tree,m_feat
   plot_list = list()
   for (i in 1:ncol(finalY_train)){
     qq=ggplot2::ggplot(data.frame(Error_Matrix), ggplot2::aes(x=Combination,y=Error_Matrix[,(i+2)], fill=Error_type))+ ggplot2::geom_bar( stat="identity",position="dodge")+ ggplot2::labs(title = "Different Error Estimation for Integrated Models")+ ggplot2::xlab("Combination Index of Integrated Models")+ggplot2::ylab("Mean Absolute Error")+ ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust=0.5, hjust = 0))
-    plot_list[[i]] = qq  
+    plot_list[[i]] = qq
   }
   for (i in 1:ncol(finalY_train)){
     tiff(paste("Error_Estimation_Response_",i,".tiff",sep=""), width = 7, height = 10, units = 'in', res = 700)
     print(plot_list[[i]])
     dev.off()
   }
-  
+
   return(Result)
 }
