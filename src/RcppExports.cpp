@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // splitt
 List splitt(NumericMatrix X, NumericMatrix Y, int m_feature, NumericVector Index, NumericMatrix Inv_Cov_Y, int Command, NumericVector ff);
-RcppExport SEXP IntegratedMRF_splitt(SEXP XSEXP, SEXP YSEXP, SEXP m_featureSEXP, SEXP IndexSEXP, SEXP Inv_Cov_YSEXP, SEXP CommandSEXP, SEXP ffSEXP) {
+RcppExport SEXP _IntegratedMRF_splitt(SEXP XSEXP, SEXP YSEXP, SEXP m_featureSEXP, SEXP IndexSEXP, SEXP Inv_Cov_YSEXP, SEXP CommandSEXP, SEXP ffSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -24,7 +24,7 @@ END_RCPP
 }
 // Node_cost
 double Node_cost(NumericMatrix y, NumericMatrix Inv_Cov_Y, int Command);
-RcppExport SEXP IntegratedMRF_Node_cost(SEXP ySEXP, SEXP Inv_Cov_YSEXP, SEXP CommandSEXP) {
+RcppExport SEXP _IntegratedMRF_Node_cost(SEXP ySEXP, SEXP Inv_Cov_YSEXP, SEXP CommandSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -34,4 +34,15 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(Node_cost(y, Inv_Cov_Y, Command));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_IntegratedMRF_splitt", (DL_FUNC) &_IntegratedMRF_splitt, 7},
+    {"_IntegratedMRF_Node_cost", (DL_FUNC) &_IntegratedMRF_Node_cost, 3},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_IntegratedMRF(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }

@@ -51,16 +51,15 @@
 #' As an example with three data subtypes, a testing sample with all subtype data available will use
 #' the combination weights corresponding to Serial [1 2 3] where if subtype 3 is not available, the function will
 #' using the combination weights corresponding to Serial [1 2].
-#' @importFrom caTools combs
+#' @importFrom utils combn
 #' @export
 CombPredict <- function(finalX,finalY_train,Cell,finalY_train_cell,finalY_test_cell,n_tree,m_feature,min_leaf,Coeff){
   Serial=NULL
-  #   library(caTools)
   for (p in length(Cell):1){
-    nk=combs(1:length(Cell),p)
+    nk=combn(1:length(Cell),p)
     sk=length(Serial)
-    for (q in 1:dim(nk)[1]){
-      Serial[[sk+q]]=nk[q, ]
+    for (q in 1:dim(nk)[2]){
+      Serial[[sk+q]]=nk[ ,q]
     }
   }
   Common_cell_dataset=NULL

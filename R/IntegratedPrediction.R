@@ -52,18 +52,17 @@
 #' Y_train_Drug=matrix(Y_train_Dream[,Drug],ncol=length(Drug))
 #' IntegratedPrediction(finalX,Y_train_Drug,Cell,Y_train_cell,Y_test_cell,Tree,Feature,Leaf)
 #'
-#' @importFrom caTools combs
+#' @importFrom utils combn
 #' @importFrom stats lsfit
 #' @export
 
 IntegratedPrediction <- function(finalX,finalY_train,Cell,finalY_train_cell,finalY_test_cell,n_tree,m_feature,min_leaf){
   Serial=NULL
-  #   library(caTools)
   for (p in length(Cell):1){
-    nk=combs(1:length(Cell),p)
+    nk=combn(1:length(Cell),p)
     sk=length(Serial)
-    for (q in 1:dim(nk)[1]){
-      Serial[[sk+q]]=nk[q, ]
+    for (q in 1:dim(nk)[2]){
+      Serial[[sk+q]]=nk[ ,q]
     }
   }
   ##

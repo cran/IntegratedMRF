@@ -17,7 +17,7 @@ export(single_tree_prediction)
 export(split_node)
 export(splitt)
 
-importFrom(caTools,combs)
+importFrom(utils,combn)
 importFrom(grDevices,dev.off)
 importFrom(grDevices,tiff)
 importFrom(stats,cor)
